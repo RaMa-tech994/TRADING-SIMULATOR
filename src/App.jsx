@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import Portfolio from './pages/Portfolio';
 import Trading from './pages/Trading';
 import History from './pages/History';
@@ -14,11 +14,11 @@ export default function App() {
         <nav style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 30px', backgroundColor: '#1e1e1e', borderBottom: '1px solid #333' }}>
           <h2 style={{ margin: 0, color: '#10B981' }}>📈 TradeSim</h2>
           <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-            <Link to="/" style={{ color: '#fff', textDecoration: 'none' }}>Portfelis</Link>
-            <Link to="/trading" style={{ color: '#fff', textDecoration: 'none' }}>Prekyba</Link>
-            <Link to="/history" style={{ color: '#fff', textDecoration: 'none' }}>Istorija</Link>
-            <Link to="/settings" style={{ color: '#fff', textDecoration: 'none' }}>Nustatymai</Link>
-            <Link to="/login" style={{ backgroundColor: '#10B981', padding: '6px 12px', borderRadius: '4px', color: '#fff', textDecoration: 'none' }}>Prisijungti</Link>
+            <NavLink to="/" style={({ isActive }) => ({ color: '#fff', textDecoration: 'none', backgroundColor: isActive ? '#10B981' : 'transparent', padding: '6px 12px', borderRadius: '4px' })}>Portfelis</NavLink>
+            <NavLink to="/trading" style={({ isActive }) => ({ color: '#fff', textDecoration: 'none', backgroundColor: isActive ? '#10B981' : 'transparent', padding: '6px 12px', borderRadius: '4px' })}>Prekyba</NavLink>
+            <NavLink to="/history" style={({ isActive }) => ({ color: '#fff', textDecoration: 'none', backgroundColor: isActive ? '#10B981' : 'transparent', padding: '6px 12px', borderRadius: '4px' })}>Istorija</NavLink>
+            <NavLink to="/settings" style={({ isActive }) => ({ color: '#fff', textDecoration: 'none', backgroundColor: isActive ? '#10B981' : 'transparent', padding: '6px 12px', borderRadius: '4px' })}>Nustatymai</NavLink>
+            <NavLink to="/login" style={({ isActive }) => ({ backgroundColor: '#10B981', padding: '6px 12px', borderRadius: '4px', color: '#fff', textDecoration: 'none', opacity: isActive ? 1 : 0.85 })}>Prisijungti</NavLink>
           </div>
         </nav>
 
