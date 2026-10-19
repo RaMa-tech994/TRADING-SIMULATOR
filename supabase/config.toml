@@ -1,0 +1,4 @@
+project_id = "trading-simulator"
+
+[functions.get-quote]
+verify_jwt = true
