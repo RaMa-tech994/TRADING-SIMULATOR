@@ -5,6 +5,9 @@ export default function Trading() {
   const [quantity, setQuantity] = useState(1);
   const [action, setAction] = useState('BUY');
 
+  // Pradinis virtualus pinigų balansas
+  const [cashBalance, setCashBalance] = useState(10000.00);
+
   // Demonstracinė akcijos kaina
   const stockPrices = { AAPL: 185.50, TSLA: 220.00, NVDA: 120.00, AMZN: 180.00 };
   const currentPrice = stockPrices[symbol] || 100.00;
@@ -12,12 +15,31 @@ export default function Trading() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert(`Sandoris įvykdytas: ${action} ${quantity} vnt. ${symbol} už $${totalPrice.toFixed(2)}`);
+
+    if (action === 'BUY') {
+      // Patikriname, ar pakanka lėšų pirkimui
+      if (totalPrice > cashBalance) {
+        alert(`Nepakanka lėšų! Jūsų balansas yra $${cashBalance.toFixed(2)}, o sandorio suma $${totalPrice.toFixed(2)}.`);
+        return;
+      }
+      // Nuskaičiuojame pinigus nuo balanso
+      setCashBalance(prev => prev - totalPrice);
+      alert(`Sėkmingai nupirkta: ${quantity} vnt. ${symbol} už $${totalPrice.toFixed(2)}`);
+    } else {
+      // Pardavimo atveju pinigai grįžta į balansą
+      setCashBalance(prev => prev + totalPrice);
+      alert(`Sėkmingai parduota: ${quantity} vnt. ${symbol} už $${totalPrice.toFixed(2)}`);
+    }
   };
 
   return (
     <div style={{ padding: '20px', color: '#fff', backgroundColor: '#121212', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       <h1>📈 Akcijų Prekyba (Trading)</h1>
+
+      {/* Laisvų pinigų rodymas */}
+      <div style={{ background: '#1e1e1e', padding: '15px', borderRadius: '8px', marginBottom: '20px', display: 'inline-block' }}>
+        <p style={{ margin: 0, fontSize: '16px' }}>Laisvi pinigai sąskaitoje: <b style={{ color: '#10B981' }}>${cashBalance.toFixed(2)}</b></p>
+      </div>
 
       <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
         {/* Pirkimo / Pardavimo forma */}
