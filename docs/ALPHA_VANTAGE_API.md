@@ -154,3 +154,10 @@ Patikrinkite:
 Be realios bandomosios DB šie Node testai neįrodo SQL užraktų, GRANT ir RLS
 veikimo. Juos būtina atskirai patikrinti bandomojoje Supabase aplinkoje.
 Tikras Alpha Vantage kvietimas sunaudos bendro rakto dienos kvotą.
+## Bendras naudojimas su prekyba
+
+get-quote ir trade naudoja tą pačią serverio quote-service.mjs paslaugą bei 002
+rezervacijas; atskiros API kvotos ar atskiros talpyklos nekuriamos. get-quote gali
+rodyti atsarginę dienos kainą su perspėjimu, o trade reikalauja prekybai tinkamos
+kainos. Galutinę kainą, normalizavimą ir pinigų pakeitimus vykdo tik 003 SQL.
+Žr. docs/BUY_SELL_DATABASE.md dėl trade JSON, klaidų ir testavimo.
