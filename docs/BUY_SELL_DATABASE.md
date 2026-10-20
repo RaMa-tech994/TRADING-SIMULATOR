@@ -255,3 +255,31 @@ Joks testas nenaudoja tinklo ar bendros Supabase DB.
 
 Prieš diegimą dar reikia realaus vartotojo JWT, Supabase gateway / REST RPC,
 Deno aplinkos ir kelių atskirų DB sesijų lygiagretumo bandymų bandomajame projekte.
+## React prekybos integracija
+
+Trading puslapis nebeskaičiuoja demonstracinio balanso ir nebevykdo sandorių
+naršyklės atmintyje. Autentifikuotas POST trade siunčia tik symbol, side,
+quantity ir request_id. Kainą, sumą, balanso ir pozicijų pakeitimus bei
+transactions įrašą nustato esamas atominis serverio RPC. Finansiniai duomenys
+saugomi DB; frontend jų nekuria ir neatstato prisijungiant.
+
+Po sėkmės balansas ir pozicijos vėl skaitomi per GET portfolio. Demonstracinės
+kainos pašalintos; faktinė vykdymo suma rodoma tik iš patvirtinto atsakymo.
+Naršyklės localStorage pagal vartotoją saugo tik nebaigto pavedimo parametrus
+ir UUID, ne autoritetingą balansą. Perkrovus puslapį arba prisijungus iš naujo
+neaiškios baigties pavedimas gali būti kartojamas rankiniu būdu su tuo pačiu
+ID. Parametrai užrakinami iki patvirtintos sėkmės arba aiškaus atmetimo.
+Jokių automatinių POST pakartojimų po transporto klaidos nėra.
+
+Tik trade funkcijai leidžiamus adresus papildomai nustato TRADE_ALLOWED_ORIGINS;
+esamas ALLOWED_ORIGINS išsaugomas. Vietinei aplinkai leistas localhost:5174.
+Gyvas gateway režimas iki ir po šio CORS pakeitimo lieka verify_jwt=false;
+funkcija privalomai tikrina Bearer per Supabase Auth /user. Diegiant būtina
+sąmoningai išsaugoti gyvą režimą (senas config.toml įrašas vis dar true).
+
+Patikra: node --test --experimental-test-isolation=none tests/trading-ui.test.mjs
+tests/portfolio-ui.test.mjs supabase/functions/tests/trade.test.mjs (39 testai).
+Build ir Trading.jsx lint praėjo. Gyvas OPTIONS vietiniam adresui: 204,
+pašaliniam: 403, POST be vartotojo JWT: 401. Tikri finansiniai bandymai bendroje
+DB nevykdyti; pirkimo/pardavimo ir pakartojimo scenarijai automatiniuose
+testuose naudoja imituotus API atsakymus. SQL ši integracija nekeičia.

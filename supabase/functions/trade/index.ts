@@ -15,5 +15,5 @@ Deno.serve(createTradeHandler({
   getQuote: createQuoteService({
     store: backend.store, apiKey: Deno.env.get('ALPHA_VANTAGE_API_KEY'),
   }),
-  origins: (Deno.env.get('ALLOWED_ORIGINS') ?? '').split(',').map(s => s.trim()).filter(Boolean),
+  origins: [Deno.env.get('ALLOWED_ORIGINS'), Deno.env.get('TRADE_ALLOWED_ORIGINS')].filter(Boolean).join(',').split(',').map(s => s.trim()).filter(Boolean),
 }));

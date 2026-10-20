@@ -1,129 +1,85 @@
-import React, { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { supabase } from './supabaseClient';
+import { SYMBOLS } from '../services/history.mjs';
+import { loadPortfolio } from '../services/portfolio.mjs';
+import { pendingKey, readPending, prepareOrder, submitTrade } from '../services/trading.mjs';
+import './Trading.css';
 
-export default function Trading() {
+function TradingForm({ userId }) {
   const [symbol, setSymbol] = useState('AAPL');
-  const [quantity, setQuantity] = useState(1);
-  const [action, setAction] = useState('BUY');
+  const [side, setSide] = useState('BUY');
+  const [quantity, setQuantity] = useState('1');
+  const [pendingOrder, setPendingOrder] = useState(() => {
+    try { return { order: readPending(localStorage, userId) }; }
+    catch { return { blocked: true }; }
+  });
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const [failed, setFailed] = useState(false);
+  const [portfolio, setPortfolio] = useState({ loading: true });
+  const [refresh, setRefresh] = useState(0);
+  const submitting = useRef(false);
+  useEffect(() => {
+    let active = true;
+    loadPortfolio(supabase).then(data => { if (active) setPortfolio({ data }); })
+      .catch(() => { if (active) setPortfolio({ error: 'Balanso gauti nepavyko. Portfelyje galite patikrinti naujausią būseną.' }); });
+    return () => { active = false; };
+  }, [refresh, userId]);
 
-  // Pradinis virtualus pinigų balansas
-  const [cashBalance, setCashBalance] = useState(10000.00);
-
-  // Demonstracinė akcijos kaina
-  const stockPrices = { AAPL: 185.50, TSLA: 220.00, NVDA: 120.00, AMZN: 180.00 };
-  const currentPrice = stockPrices[symbol] || 100.00;
-  const totalPrice = currentPrice * quantity;
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (action === 'BUY') {
-      // Patikriname, ar pakanka lėšų pirkimui
-      if (totalPrice > cashBalance) {
-        alert(`Nepakanka lėšų! Jūsų balansas yra $${cashBalance.toFixed(2)}, o sandorio suma $${totalPrice.toFixed(2)}.`);
-        return;
+  async function execute(event) {
+    event.preventDefault();
+    if (submitting.current || pendingOrder.blocked) return;
+    submitting.current = true;
+    setBusy(true); setMessage(''); setFailed(false);
+    let order;
+    try {
+      try { order = prepareOrder(localStorage, userId, { symbol, side, quantity: Number(quantity) }); }
+      catch { throw new Error('Pavedimo saugiai išsaugoti nepavyko. Patikrinkite kiekį ir naršyklės saugyklos leidimus.'); }
+      setPendingOrder({ order });
+      const result = await submitTrade(supabase, order, userId);
+      try { localStorage.removeItem(pendingKey(userId)); setPendingOrder({ order: null }); }
+      catch { setPendingOrder({ order }); }
+      setMessage('Sandoris išsaugotas duomenų bazėje: ' + result.transaction.side + ' ' + result.transaction.quantity + ' ' + result.transaction.symbol + ', suma ' + result.transaction.total_amount + ' USD.');
+      setPortfolio({ loading: true }); setRefresh(value => value + 1);
+    } catch (error) {
+      if (error.definitive && order) {
+        try { localStorage.removeItem(pendingKey(userId)); setPendingOrder({ order: null }); } catch { /* Išsaugomas tas pats pavedimas. */ }
       }
-      // Nuskaičiuojame pinigus nuo balanso
-      setCashBalance(prev => prev - totalPrice);
-      alert(`Sėkmingai nupirkta: ${quantity} vnt. ${symbol} už $${totalPrice.toFixed(2)}`);
-    } else {
-      // Pardavimo atveju pinigai grįžta į balansą
-      setCashBalance(prev => prev + totalPrice);
-      alert(`Sėkmingai parduota: ${quantity} vnt. ${symbol} už $${totalPrice.toFixed(2)}`);
-    }
-  };
-
-  return (
-    <div style={{ padding: '20px', color: '#fff', backgroundColor: '#121212', minHeight: '100vh', fontFamily: 'sans-serif' }}>
-      <h1>📈 Akcijų Prekyba (Trading)</h1>
-
-      {/* Laisvų pinigų rodymas */}
-      <div style={{ background: '#1e1e1e', padding: '15px', borderRadius: '8px', marginBottom: '20px', display: 'inline-block' }}>
-        <p style={{ margin: 0, fontSize: '16px' }}>Laisvi pinigai sąskaitoje: <b style={{ color: '#10B981' }}>${cashBalance.toFixed(2)}</b></p>
-      </div>
-
-      <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
-        {/* Pirkimo / Pardavimo forma */}
-        <div style={{ background: '#1e1e1e', padding: '20px', borderRadius: '8px', width: '320px' }}>
-          <h3>Vykdyti Sandorį</h3>
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>Veiksmas:</label>
-              <select 
-                value={action} 
-                onChange={(e) => setAction(e.target.value)}
-                style={{ width: '100%', padding: '8px', background: '#2a2a2a', color: '#fff', border: '1px solid #444', borderRadius: '4px' }}
-              >
-                <option value="BUY">PIRKTI (BUY)</option>
-                <option value="SELL">PARDUOTI (SELL)</option>
-              </select>
-            </div>
-
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>Akcijos Simbolis:</label>
-              <select 
-                value={symbol} 
-                onChange={(e) => setSymbol(e.target.value)}
-                style={{ width: '100%', padding: '8px', background: '#2a2a2a', color: '#fff', border: '1px solid #444', borderRadius: '4px' }}
-              >
-                <option value="AAPL">AAPL (Apple) - $185.50</option>
-                <option value="TSLA">TSLA (Tesla) - $220.00</option>
-                <option value="NVDA">NVDA (Nvidia) - $120.00</option>
-                <option value="AMZN">AMZN (Amazon) - $180.00</option>
-              </select>
-            </div>
-
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>Kiekis:</label>
-              <input 
-                type="number" 
-                min="1" 
-                value={quantity} 
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                style={{ width: '93%', padding: '8px', background: '#2a2a2a', color: '#fff', border: '1px solid #444', borderRadius: '4px' }}
-              />
-            </div>
-
-            <div style={{ marginBottom: '20px', padding: '10px', background: '#2a2a2a', borderRadius: '4px' }}>
-              <p style={{ margin: 0 }}>Bendra suma: <b>${totalPrice.toFixed(2)}</b></p>
-            </div>
-
-            <button 
-              type="submit" 
-              style={{ 
-                width: '100%', 
-                padding: '10px', 
-                backgroundColor: action === 'BUY' ? '#10B981' : '#EF4444', 
-                color: '#fff', 
-                border: 'none', 
-                borderRadius: '4px', 
-                fontWeight: 'bold', 
-                cursor: 'pointer' 
-              }}
-            >
-              {action === 'BUY' ? 'Patvirtinti Pirkimą' : 'Patvirtinti Pardavimą'}
-            </button>
-          </form>
-        </div>
-
-        {/* Informacija apie rinką */}
-        <div style={{ background: '#1e1e1e', padding: '20px', borderRadius: '8px', flex: 1, minWidth: '250px' }}>
-          <h3>Populiarios Akcijos</h3>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            <li style={{ padding: '10px', borderBottom: '1px solid #333', display: 'flex', justifyContent: 'space-between' }}>
-              <span><b>AAPL</b> - Apple Inc.</span>
-              <span style={{ color: '#10B981' }}>$185.50 (+1.2%)</span>
-            </li>
-            <li style={{ padding: '10px', borderBottom: '1px solid #333', display: 'flex', justifyContent: 'space-between' }}>
-              <span><b>TSLA</b> - Tesla Inc.</span>
-              <span style={{ color: '#EF4444' }}>$220.00 (-0.8%)</span>
-            </li>
-            <li style={{ padding: '10px', borderBottom: '1px solid #333', display: 'flex', justifyContent: 'space-between' }}>
-              <span><b>NVDA</b> - Nvidia Corp.</span>
-              <span style={{ color: '#10B981' }}>$120.00 (+3.5%)</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
+      setFailed(true); setMessage(error.message);
+    } finally { submitting.current = false; setBusy(false); }
+  }
+  const order = pendingOrder.order;
+  return <>
+    <section className="trading-card" aria-live="polite"><h2>Laisvi pinigai</h2>
+      {portfolio.loading ? <p>Kraunamas balansas…</p> : portfolio.error ? <p>{portfolio.error}</p> : <><p className="trading-balance">{portfolio.data.cash_balance} USD</p><p>Turimos akcijos: {portfolio.data.positions.length ? portfolio.data.positions.map(p => p.symbol + ': ' + p.quantity).join(', ') : 'Akcijų dar nėra.'}</p></>}
+      <Link to="/">Atidaryti portfelį</Link>
+    </section>
+    <section className="trading-card"><h2>Virtualus sandoris</h2>
+      <p>Sandoris vykdomas pagal serveryje patikrintą dienos kainą. Galutinę kainą ir sumą apskaičiuoja serveris. Tai nėra realaus laiko kotiruotė.</p>
+      {pendingOrder.blocked && <p role="alert">Nepavyko perskaityti nebaigto pavedimo. Naujas pavedimas blokuojamas, kol nepatikrintas ankstesnis rezultatas ir naršyklės saugykla.</p>}
+      {order && <p role="status">Nebaigtas pavedimas: {order.side} {order.quantity} {order.symbol}. Pakartojimas naudos tą patį ID ir nesukurs to paties sandorio dublikato.</p>}
+      <form onSubmit={execute}>
+        <fieldset disabled={busy || Boolean(order) || pendingOrder.blocked}>
+          <label htmlFor="trade-side">Veiksmas</label><select id="trade-side" value={order?.side || side} onChange={event => setSide(event.target.value)}><option value="BUY">Pirkti</option><option value="SELL">Parduoti</option></select>
+          <label htmlFor="trade-symbol">Akcija</label><select id="trade-symbol" value={order?.symbol || symbol} onChange={event => setSymbol(event.target.value)}>{SYMBOLS.map(value => <option key={value}>{value}</option>)}</select>
+          <label htmlFor="trade-quantity">Kiekis</label><input id="trade-quantity" type="number" min="1" max="2147483647" step="1" required value={order?.quantity ?? quantity} onChange={event => setQuantity(event.target.value)}/>
+        </fieldset>
+        <button type="submit" disabled={busy || pendingOrder.blocked}>{busy ? 'Vykdomas sandoris…' : order ? 'Pakartoti tą patį pavedimą' : side === 'BUY' ? 'Pirkti ir išsaugoti sandorį' : 'Parduoti ir išsaugoti sandorį'}</button>
+      </form>
+      {message && <p role={failed ? 'alert' : 'status'}>{message}</p>}
+    </section>
+  </>;
+}
+export default function Trading() {
+  const [auth, setAuth] = useState({ loading: true });
+  useEffect(() => {
+    if (!supabase) return;
+    let active = true; let changed = false;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { changed = true; if (active) setAuth({ user: session?.user.id }); });
+    supabase.auth.getSession().then(({ data, error }) => { if (active && !changed) setAuth({ user: error ? null : data.session?.user.id }); })
+      .catch(() => { if (active && !changed) setAuth({ user: null }); });
+    return () => { active = false; subscription.unsubscribe(); };
+  }, []);
+  return <main className="trading-page"><h1>Akcijų prekyba</h1>{!supabase ? <p role="alert">Supabase nesukonfigūruotas.</p> : auth.loading ? <p role="status">Tikrinama sesija…</p> : !auth.user ? <p><Link to="/login">Prisijunkite</Link>, kad galėtumėte pirkti ir parduoti akcijas.</p> : <TradingForm key={auth.user} userId={auth.user}/>}</main>;
 }
