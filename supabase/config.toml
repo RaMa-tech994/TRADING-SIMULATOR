@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.trade]
 verify_jwt = true
+# JWT privalomai tikrinamas portfolio handlerio per Supabase Auth.
+[functions.portfolio]
+verify_jwt = false
