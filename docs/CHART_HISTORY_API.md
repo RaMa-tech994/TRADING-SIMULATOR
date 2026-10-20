@@ -146,3 +146,17 @@ jo nesant, SQL testas pažymimas skipped. Bendras Supabase projektas nenaudojama
 Prieš diegimą: įsitikinti, kad būtent šios versijos 005 RPC įdiegtos, patikrinti Deno
 aplinką ir tikrą vartotojo JWT atskirame bandomajame projekte. Diegti tik naujas
 price-history ir portfolio-history funkcijas; šiame etape diegimas neatliekamas.
+
+## Istorijos naršyklės prieiga
+
+Istorijos funkcijos sujungia esamą ALLOWED_ORIGINS su pasirenkamu
+HISTORY_ALLOWED_ORIGINS (kableliais atskirti tikslūs svetainių adresai).
+Papildomas sąrašas taikomas tik price-history ir portfolio-history;
+kitų funkcijų CORS konfigūracija nesikeičia. Vietinei aplinkai galima
+įrašyti http://localhost:5174; produkcijos adresas turi būti leidžiamame sąraše.
+
+Istorijos puslapio mygtukas įrašo tik dabartinį portfelio stebėjimą.
+Vienam bandymui naudojamas vienas request_id; neaiškios baigties atveju
+jis išsaugomas sessionStorage pagal vartotoją ir kartojamas tik rankiniu būdu.
+Sėkmės atveju portfelio grafikai perskaitomi iš API. Naujų taškų minutės
+ribą užtikrina serveris, papildomai sąsajoje rodoma 60 sekundžių pauzė.
