@@ -9,5 +9,5 @@ const backend = createBackend({
 Deno.serve(createHandler({
   ...backend,
   apiKey: Deno.env.get('ALPHA_VANTAGE_API_KEY'),
-  origins: (Deno.env.get('ALLOWED_ORIGINS') ?? '').split(',').map(s => s.trim()).filter(Boolean),
+  origins: [Deno.env.get('ALLOWED_ORIGINS'), Deno.env.get('QUOTE_ALLOWED_ORIGINS')].filter(Boolean).join(',').split(',').map(s => s.trim()).filter(Boolean),
 }));
