@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 
 export default function Login() {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +27,7 @@ export default function Login() {
           setMessage(`Prisijungimo klaida: ${error.message}`);
         } else {
           setMessage('Sėkmingai prisijungėte!');
-          console.log('Vartotojo duomenys:', data);
+          if (data.session) navigate('/', { replace: true });
         }
       } else {
         // Registracija su Supabase
@@ -40,7 +42,7 @@ export default function Login() {
           setMessage('Šis el. pašto adresas jau užregistruotas!');
         } else {
           setMessage(data.session ? 'Registracija sėkminga, prisijungėte' : 'Registracija sėkminga! Patikrinkite savo el. paštą patvirtinimui.');
-          console.log('Naujas vartotojas:', data);
+          if (data.session) navigate('/', { replace: true });
         }
       }
     } catch (err) {
