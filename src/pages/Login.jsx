@@ -39,7 +39,7 @@ export default function Login() {
         } else if (data.user && data.user.identities && data.user.identities.length === 0) {
           setMessage('Šis el. pašto adresas jau užregistruotas!');
         } else {
-          setMessage('Registracija sėkminga! Patikrinkite savo el. paštą patvirtinimui.');
+          setMessage(data.session ? 'Registracija sėkminga, prisijungėte' : 'Registracija sėkminga! Patikrinkite savo el. paštą patvirtinimui.');
           console.log('Naujas vartotojas:', data);
         }
       }
