@@ -1,12 +1,33 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import Portfolio from './pages/Portfolio';
 import Trading from './pages/Trading';
 import History from './pages/History';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
+import { supabase } from './pages/supabaseClient';
 
 export default function App() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Patikriname esamą sesiją
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Klausomės prisijungimo / atsijungimo pokyčių
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
   return (
     <Router>
       <div style={{ backgroundColor: '#121212', minHeight: '100vh', color: '#fff' }}>
@@ -18,7 +39,17 @@ export default function App() {
             <Link to="/trading" style={{ color: '#fff', textDecoration: 'none' }}>Prekyba</Link>
             <Link to="/history" style={{ color: '#fff', textDecoration: 'none' }}>Istorija</Link>
             <Link to="/settings" style={{ color: '#fff', textDecoration: 'none' }}>Nustatymai</Link>
-            <Link to="/login" style={{ backgroundColor: '#10B981', padding: '6px 12px', borderRadius: '4px', color: '#fff', textDecoration: 'none' }}>Prisijungti</Link>
+            
+            {user ? (
+              <button 
+                onClick={handleLogout}
+                style={{ backgroundColor: '#ef4444', padding: '6px 12px', borderRadius: '4px', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Atsijungti
+              </button>
+            ) : (
+              <Link to="/login" style={{ backgroundColor: '#10B981', padding: '6px 12px', borderRadius: '4px', color: '#fff', textDecoration: 'none' }}>Prisijungti</Link>
+            )}
           </div>
         </nav>
 
