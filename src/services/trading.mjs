@@ -51,7 +51,7 @@ export async function submitTrade(client, order, userId) {
   const tx = result?.transaction;
   const decimal = value => typeof value === 'string' && /^\d+(\.\d{1,6})?$/.test(value) && /[1-9]/.test(value);
   if (result?.success !== true || result.currency !== 'USD' || typeof result.replayed !== 'boolean' || result.request_id !== order.request_id ||
-      !uuid.test(tx?.id ?? '') || tx.request_id !== order.request_id || tx.symbol !== order.symbol || tx.side !== order.side ||
+      !uuid.test(tx?.id ?? '') || tx.request_id !== order.request_id || tx.symbol !== order.symbol || tx.side !== order.side.toLowerCase() ||
       tx.quantity !== order.quantity || !decimal(tx.price) || !decimal(tx.total_amount) || !Number.isFinite(Date.parse(tx.executed_at))) {
     throw tradeError('Sandorio atsakymas nepatvirtintas. Pakartokite tik tą patį pavedimą.');
   }

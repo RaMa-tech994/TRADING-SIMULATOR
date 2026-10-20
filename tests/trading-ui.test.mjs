@@ -4,7 +4,7 @@ import {validOrder,prepareOrder,readPending,pendingKey,submitTrade} from '../src
 const id='11111111-1111-4111-8111-111111111111';
 const order={symbol:'AAPL',side:'BUY',quantity:2,request_id:id};
 function storage(){const map=new Map();return {getItem:key=>map.get(key)||null,setItem:(key,value)=>map.set(key,value),removeItem:key=>map.delete(key)};}
-const response=(o=order)=>({success:true,currency:'USD',request_id:o.request_id,replayed:false,transaction:{...o,id:'22222222-2222-4222-8222-222222222222',price:'100.00',total_amount:'200.00',executed_at:'2026-10-20T10:00:00Z'}});
+const response=(o=order)=>({success:true,currency:'USD',request_id:o.request_id,replayed:false,transaction:{...o,side:o.side.toLowerCase(),id:'22222222-2222-4222-8222-222222222222',price:'100.00',total_amount:'200.00',executed_at:'2026-10-20T10:00:00Z'}});
 function client(invoke,user='user-a'){return {auth:{getSession:async()=>({data:{session:{access_token:'jwt',user:{id:user}}}})},functions:{invoke}};}
 test('rejects fractional, empty, unsupported and excessive orders',()=>{for(const fields of [{quantity:1.5},{quantity:0},{quantity:2147483648},{symbol:'FAKE'},{side:'OTHER'}])assert.equal(Boolean(validOrder({...order,...fields})),false);});
 test('stores complete order and restores same ID after reload or input changes',()=>{const store=storage();assert.deepEqual(prepareOrder(store,'user-a',order,()=>id),order);assert.deepEqual(prepareOrder(store,'user-a',{symbol:'MSFT',side:'SELL',quantity:8},()=>{throw Error('must not create ID')}),order);assert.deepEqual(readPending(store,'user-a'),order);assert.equal(readPending(store,'user-b'),null);});
