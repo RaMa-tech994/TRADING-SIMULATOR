@@ -120,3 +120,16 @@ Naudoja jau esantį laikiną PGlite paketą iš docs/BUY_SELL_DATABASE.md arba
 PGLITE_MODULE_PATH kelią. Jei jo nėra, SQL testas pažymimas skipped; aritmetikos ir
 HTTP testams papildomų paketų nereikia. Migracijų testas pritaiko 001–004, tikrina
 RLS su dviem vartotojais, anon/service_role teises ir tikslius skaičius.
+
+## Portfelio puslapis
+
+Portfelio puslapis skaito prisijungusio vartotojo duomenis per GET portfolio.
+Demonstraciniai 5000 USD ir pavyzdinės akcijos pašalinti. Naujam vartotojui
+rodoma API grąžinta vertė (įprastai 10000.00 USD), ne frontend nustatytas balansas.
+Tuščias pozicijų sąrašas rodomas kaip tuščias; nepilno vertinimo null sumos
+nerodomos kaip nulis. Yra krovimo, neprisijungusio vartotojo ir klaidos būsenos.
+
+Tik portfolio funkcijai galima papildyti CORS sąrašą per PORTFOLIO_ALLOWED_ORIGINS
+(kableliais atskirti tikslūs adresai). Esamas ALLOWED_ORIGINS išlieka.
+Vietinei aplinkai sukonfigūruota http://localhost:5174. Kolegų vietinis ar Vercel
+adresas taip pat turi būti viename iš šių sąrašų; visi adresai automatiškai neleidžiami.

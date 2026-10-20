@@ -10,5 +10,5 @@ Deno.serve(createPortfolioHandler({
   getUser: backend.getUser,
   readPortfolio: createPortfolioReader({ url, publicKey }),
   getQuote: createQuoteService({ store: backend.store, apiKey: Deno.env.get('ALPHA_VANTAGE_API_KEY') }),
-  origins: (Deno.env.get('ALLOWED_ORIGINS') ?? '').split(',').map(s => s.trim()).filter(Boolean),
+  origins: [Deno.env.get('ALLOWED_ORIGINS'), Deno.env.get('PORTFOLIO_ALLOWED_ORIGINS')].filter(Boolean).join(',').split(',').map(s => s.trim()).filter(Boolean),
 }));

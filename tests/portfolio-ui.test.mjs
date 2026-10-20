@@ -1,0 +1,7 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {loadPortfolio,validatePortfolio} from '../src/services/portfolio.mjs';
+test('new user displays API balance without demo positions',async()=>{let options;const portfolio={currency:'USD',cash_balance:'10000.00',total_portfolio_value:'10000.00',valuation_complete:true,positions:[]};const result=await loadPortfolio({auth:{getSession:async()=>({data:{session:{access_token:'jwt'}}})},functions:{invoke:async(name,input)=>{assert.equal(name,'portfolio');options=input;return {data:portfolio};}}});assert.equal(result.cash_balance,'10000.00');assert.deepEqual(result.positions,[]);assert.equal(options.method,'GET');assert.equal(options.headers.Authorization,'Bearer jwt');});
+test('incomplete valuation preserves null and actual cash balance',()=>{const result=validatePortfolio({currency:'USD',cash_balance:'25.13',total_portfolio_value:null,valuation_complete:false,positions:[{symbol:'AAPL'}]});assert.equal(result.total_portfolio_value,null);assert.equal(result.cash_balance,'25.13');});
+test('invalid complete value is rejected',()=>{assert.throws(()=>validatePortfolio({currency:'USD',cash_balance:'10000.00',total_portfolio_value:null,valuation_complete:true,positions:[]}));});
+test('signed out user cannot request portfolio',async()=>{let called=false;await assert.rejects(loadPortfolio({auth:{getSession:async()=>({data:{session:null}})},functions:{invoke:()=>{called=true;}}}),/Prisijunkite/);assert.equal(called,false);});
