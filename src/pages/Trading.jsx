@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient';
 import { SYMBOLS } from '../services/history.mjs';
 import { loadPortfolio } from '../services/portfolio.mjs';
 import { pendingKey, readPending, prepareOrder, submitTrade } from '../services/trading.mjs';
+import QuotePreview from '../components/QuotePreview';
 import './Trading.css';
 
 function TradingForm({ userId }) {
@@ -65,6 +66,7 @@ function TradingForm({ userId }) {
           <label htmlFor="trade-symbol">Akcija</label><select id="trade-symbol" value={order?.symbol || symbol} onChange={event => setSymbol(event.target.value)}>{SYMBOLS.map(value => <option key={value}>{value}</option>)}</select>
           <label htmlFor="trade-quantity">Kiekis</label><input id="trade-quantity" type="number" min="1" max="2147483647" step="1" required value={order?.quantity ?? quantity} onChange={event => setQuantity(event.target.value)}/>
         </fieldset>
+        <QuotePreview key={order?.symbol || symbol} symbol={order?.symbol || symbol} quantity={order?.quantity ?? quantity} userId={userId}/>
         <button type="submit" disabled={busy || pendingOrder.blocked}>{busy ? 'Vykdomas sandoris…' : order ? 'Pakartoti tą patį pavedimą' : side === 'BUY' ? 'Pirkti ir išsaugoti sandorį' : 'Parduoti ir išsaugoti sandorį'}</button>
       </form>
       {message && <p role={failed ? 'alert' : 'status'}>{message}</p>}

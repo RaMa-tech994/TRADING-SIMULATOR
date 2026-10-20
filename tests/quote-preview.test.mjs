@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {estimateOrder,loadQuote,validatePreview} from '../src/services/quote.mjs';
+const quote={symbol:'AAPL',price:'100.005000',trading_date:'2026-10-19',is_realtime:false,cache_fresh:true,price_freshness:'recent_daily',stale:false};
+const client=invoke=>({auth:{getSession:async()=>({data:{session:{user:{id:'user-a'},access_token:'jwt'}}})},functions:{invoke}});
+test('estimate rounds unit price before multiplication exactly like server',()=>{assert.deepEqual(estimateOrder('100.005',2),{unit:'100.01',total:'200.02'});assert.deepEqual(estimateOrder('0.015',2),{unit:'0.02',total:'0.04'});});
+test('large decimal totals retain precision',()=>{assert.equal(estimateOrder('99999999999.99',2147483647).total,'214748364699978525163.53');});
+test('invalid quantities and zero-rounded price produce no estimate',()=>{for(const quantity of [0,1.2,NaN,2147483648])assert.equal(estimateOrder('100',quantity),null);assert.equal(estimateOrder('0.004999',2),null);});
+test('malformed or wrong-symbol response rejected, stale real data preserved',()=>{assert.throws(()=>validatePreview({...quote,symbol:'TSLA'},'AAPL'));assert.throws(()=>validatePreview({...quote,trading_date:'2026-02-30'},'AAPL'));assert.throws(()=>validatePreview({...quote,price:'NaN'},'AAPL'));assert.equal(validatePreview({...quote,stale:true},'AAPL').stale,true);});
+test('price GET uses authenticated JWT, simultaneous requests are deduplicated',async()=>{let calls=0;let release;const ready=new Promise(resolve=>{release=resolve});const api=client(async(name,options)=>{calls++;assert.equal(name,'get-quote?symbol=AAPL');assert.equal(options.method,'GET');assert.equal(options.headers.Authorization,'Bearer jwt');await ready;return {data:quote}});const first=loadQuote(api,'AAPL','user-a');const second=loadQuote(api,'AAPL','user-a');release();assert.deepEqual(await first,quote);await second;assert.equal(calls,1);});
+test('wrong account does not request price',async()=>{let called=false;await assert.rejects(loadQuote(client(async()=>{called=true}),'AAPL','user-b'),/Prisijunkite/);assert.equal(called,false);});
+test('rate limit gives useful message and no fake fallback',async()=>{await assert.rejects(loadQuote(client(async()=>({error:{context:{status:429}}})),'AAPL','user-a'),/limitas/);});
