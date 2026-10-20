@@ -8,3 +8,10 @@ verify_jwt = true
 # JWT privalomai tikrinamas portfolio handlerio per Supabase Auth.
 [functions.portfolio]
 verify_jwt = false
+
+# Šios funkcijos privalomai tikrina vartotoją per Supabase Auth /user.
+[functions.price-history]
+verify_jwt = false
+
+[functions.portfolio-history]
+verify_jwt = false
